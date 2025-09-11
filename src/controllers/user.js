@@ -1,5 +1,6 @@
 const { readUser, createUser, updateUser, deleteUser, readUsers } = require("../logic").userLogic
 const bcrypt = require("bcrypt")
+const { responseBody } = require("../utils").response
 
 /**
  * POST /api/v1/user
@@ -11,7 +12,7 @@ const createUserController = async (req, res, next) => {
         req.session.user = user
         res.cookie("id", user._id, {maxAge: 60000 * 60 * 24 * 14})
         //console.log(req.session)
-        return res.status(201).json(user)
+        return responseBody(res, `Welcome, ${username}`, user, 201)
     } catch (error) {
         if (error == "User Already Exists") {
             let user
@@ -35,7 +36,8 @@ const createUserController = async (req, res, next) => {
 
             if (user.username == username && user.password) {
                 req.session.user = user
-                return res.json(user)
+                return responseBody(res, `Welcome back @${username}`, user, 200)
+                
             } else {
                 console.log("error dey ooo", error)
                 next(error)
@@ -51,10 +53,10 @@ const createUserController = async (req, res, next) => {
 const readUserController = async (req, res, next) => {
     try {
         if (req.params.id) 
-            return res.json(await readUser(req.params.id))
+            return responseBody(res, `User ${req.params.id} retrieved`, await readUser(req.params.id), 200)
 
         //console.log(req.cookies.id)
-        return res.json(await readUser(req.session.user.id))
+        return responseBody(res, `User ${req.session.user.id} retrieved `, await readUser(req.session.user.id), 200)
     } catch (error) {
         next(error)
     }
@@ -66,7 +68,7 @@ const readUserController = async (req, res, next) => {
 const readUsersController = async (req, res, next) => {
     try {
         const users = await readUsers()
-        return res.json(users)
+        return responseBody(res, `Users retrieved`, users, 200)
     } catch (error) {
         next(error)
     }
@@ -78,7 +80,7 @@ const readUsersController = async (req, res, next) => {
 const updateUserController = async (req, res, next) => {
     try {
         const user = await updateUser(req.session.user.id, req.body)
-        return res.json(user)
+        return responseBody(res, "User updated", user, 200)
     } catch (error) {
         next(error)
     }

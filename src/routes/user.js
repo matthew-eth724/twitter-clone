@@ -6,7 +6,9 @@ const authMiddleware = require("../middleware").auth
 
 const router = Router()
 
-router.get("/", readUserController)
+router.get("/", authMiddleware, readUserController)
+
+router.get("/:id", readUserController)
 
 router.get("/all", readUsersController)
 
