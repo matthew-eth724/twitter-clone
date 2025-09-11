@@ -4,20 +4,24 @@ const bcrypt = require("bcrypt")
 const SECRET = process.env.SECRET || "secret"
 const createUser = async (data) => {
     try {
-        const { username, password, dob } = data
+        const { username, password} = data
 
         //Username validation
-        validateUsername(username)
+        await validateUsername(username)
 
         //Password validation
         validatePassword(password)
         
         const passwordHash = await bcrypt.hash(password, 10)
-        const user = new User({username, passwordHash, dob})
+        const user = new User({username, passwordHash})
 
         return await user.save()
 
     } catch (error) {
+        console.log({
+            error: error,
+            where: "User Creation"
+        })
         throw error
     }
 }
@@ -26,10 +30,14 @@ const readUser = async (id) => {
     try {
         const userByUsername = await readUserByUsername(id)
         if (userByUsername)
-            id = userByUsername.__id
+            return userByUsername
 
         return await User.findById(id)
     } catch (error) {
+        console.log({
+            error: error,
+            where: "User Retrieval"
+        })
         throw error
     }
 }
@@ -38,13 +46,17 @@ const readUsers = async () => {
     try {
         return await User.find()
     } catch (error) {
+        console.log({
+            error: error,
+            where: "Users Retrieval"
+        })
         throw error
     }
 }
 
 const readUserByUsername = async (username) => {
     try {
-        return await User.findOne({username})
+        return await User.findOne({username: username})
     } catch (error) {
         throw error
     }
@@ -56,10 +68,14 @@ const updateUser = async (id, data) => {
         if (userByUsername)
             id = userByUsername.__id
 
-        const {name} = data
-        await User.findByIdAndUpdate(id, {name})
-        return await readUserById(id)
+        const {name, bio} = data
+        await User.findByIdAndUpdate(id, {name, bio})
+        return await readUser(id)
     } catch (error) {
+        console.log({
+            error: error,
+            where: "User Update"
+        })
         throw error
     }
 }
@@ -72,6 +88,10 @@ const deleteUser = async (id) => {
         
         await User.findByIdAndDelete(id)
     } catch (error) {
+        console.log({
+            error: error,
+            where: "User deletion"
+        })
         throw error
     }
 }
@@ -85,9 +105,13 @@ const validateUsername = async (username) => {
         if (!username)
             throw "Empty username field"
 
-        if (username.length > 16)
-            throw "Username passes required character length (16)"
+        if (username.length > 32)
+            throw `Username passes required character length (${username.length})`
     } catch (error) {
+        console.log({
+            error: error,
+            where: "Username Validation"
+        })
         throw error 
     }
 }
@@ -100,28 +124,48 @@ const validatePassword = (password) => {
         if (password.length > 32)
             throw "password above required character length (32)"
 
-        const specialChars = ["!", "#", "$", "%", "^", "&", "*", "(", ")", "_", "-", "+", "=", "?", ">", "<", "/", ":", ";", "[", "]", "{", "}"]
+        const specialChars = ["!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "-", "+", "=", "?", ">", "<", "/", ":", ";", "[", "]", "{", "}"]
         let containSpecial = false
+        const pword = password.split("")
 
-        specialChars.forEach(char => {
-            if (char in password) 
-                containSpecial = true
-        })
+        for (i = 0; i < specialChars.length; i++) {
+            console.log(`Test1- password contains special character: ${containSpecial} char: ${specialChars[i]}, ${i}`)
+            
+            for (x = 0; x < pword.length; x++) {
+                console.log(x, i)
+                if (pword[x] == specialChars[i]){
+                    containSpecial = true
+                    console.log(`Test2- password contains special character: ${containSpecial} char: ${specialChars[i]}, char: ${pword[i]} ${i}`)
+                }
+            }
+            console.log("fail")
+        }
 
-        if (!containSpecial) 
+        if (!containSpecial) {
+            console.log(`Test3- password contains special character: ${containSpecial}`)
             throw "password must contain special characters"
+        }
 
         let containNum = false
 
-        for (i = -1; i < 10; i++) {
-            if (i in password) 
-                containNum = true
+        for (i = 0; i < 10; i++) {
+            for (x = 0; x < pword.length; x++) {
+                if (i == pword[x]) {
+                    containNum = true
+                }
+            }
         }
 
         if (!containNum)
             throw "password must contain a number"
 
+        console.log(`password contains number: ${containNum}`)
+        console.log(`password contains special character: ${containSpecial}`)
     } catch (error) {
+        console.log({
+            error: error,
+            where: "Password Validation"
+        })
         throw error
     }
 }

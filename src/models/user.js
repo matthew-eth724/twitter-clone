@@ -4,7 +4,7 @@ const user = new Schema({
     username: {type: String, unique: true, required: true, max: 16, min: 1},
     name: String,
     passwordHash: {type: String, unique: true, required: true},
-    dob: {type: Date},
+    bio: String,
     dateCreated: {type: Date, default: Date.now()},
 })
 

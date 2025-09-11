@@ -2,10 +2,13 @@ const express = require("express")
 const cors = require("cors")
 const session = require("express-session")
 const passport = require("passport")
+const path = require("path")
 const cookieParser = require("cookie-parser")
+const errorMiddleware = require("./middleware").errorHandler
 require("dotenv").config()
 
 const DBConnect = require("./DB")
+const apiRouter = require("./routes")
 
 const PORT = process.env.PORT || 3000
 const SECERT = process.env.SECRET || "secret"
@@ -28,7 +31,10 @@ app.use((req, res, next) => {
 })
 app.use(passport.initialize())
 app.use(passport.session())
+app.use(express.static(path.join(__dirname, 'public')))
+app.use("/signin", express.static(path.join(__dirname, "public", "signin")))
 app.use(cookieParser())
+app.use("/api", apiRouter)
 
 try {
     DBConnect()
@@ -36,10 +42,11 @@ try {
     console.error("DB CONNECTION ERROR", error)
 }
 
-app.get("/", (req, res) => {
+/*app.get("/", (req, res) => {
     res.send("Hello World")
-})
+})*/
 
+app.use(errorMiddleware)
 app.listen(PORT, () => {
     console.log(`SERVER RUNNING ON PORT ${PORT}`)
     console.log(`http://localhost:${PORT}`);
