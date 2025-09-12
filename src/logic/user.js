@@ -1,5 +1,6 @@
 const User = require("../models").UserModel
 const bcrypt = require("bcrypt")
+const removeItem = require("../utils").removeItem
 
 const SECRET = process.env.SECRET || "secret"
 const createUser = async (data) => {
@@ -13,7 +14,7 @@ const createUser = async (data) => {
         validatePassword(password)
         
         const passwordHash = await bcrypt.hash(password, 10)
-        const user = new User({username, passwordHash})
+        const user = new User({name: username, username, passwordHash, active: true})
 
         return await user.save()
 
@@ -28,10 +29,10 @@ const createUser = async (data) => {
 
 const readUser = async (id) => {
     try {
-        const userByUsername = await readUserByUsername(id)
+        const userByUsername = await readUserByUsername(id.toLowerCase())
         if (userByUsername)
             return userByUsername
-
+        
         return await User.findById(id)
     } catch (error) {
         console.log({
@@ -107,6 +108,22 @@ const validateUsername = async (username) => {
 
         if (username.length > 32)
             throw `Username passes required character length (${username.length})`
+
+        const uname = username.split("")
+        for (x = 0; x < uname.length; x++) {
+            if (uname[x] == " ") 
+                throw "Username cannot contain spaces"
+        }
+
+        const specialChars = ["!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "-", "+", "=", "?", ">", "<", "/", ":", ";", "[", "]", "{", "}"]
+
+        for (i = 0; i < uname.length; i++) {
+            for (x = 0; x < specialChars.length;  x++) {
+                if (uname[i] == specialChars[x])
+                    throw "Username cannot contain special characters"
+            }
+        }
+
     } catch (error) {
         console.log({
             error: error,
@@ -170,6 +187,61 @@ const validatePassword = (password) => {
     }
 }
 
+const follow = async (userId, toFollow) => {
+    try {
+        const user = await readUser(userId)
+        user.following.push(toFollow)
+        await User.findByIdAndUpdate(userId, {following: user.following})
+
+        const following = await readUser(toFollow)
+        following.followers.push(userId)
+        await User.findByIdAndUpdate(userId, {followers: following.followers })
+    } catch (error) {
+        throw
+    }
+}
+
+const unfollow = async (userId, toUnfollow) => {
+    try {
+        const user = readUser(userId)
+        await User.findByIdAndUpdate(userId, {following: removeItem(user.following, toUnfollow)})
+
+        const following = readUser(toUnfollow)
+        await User.findByIdAndUpdate(toUnfollow, {followers: removeItem(toUnfollow.followers, userId)})
+    } catch (error) {
+        throw error
+    }
+}
+
+const getFollowers = async (userId) => {
+    try {
+        const user = await readUser(userId)
+        let followers = []
+        for (i = 0; i < user.followers.length; i++) {
+            followers.push(await user.followers[i])
+        }
+
+        return followers
+    } catch (error) {
+        throw error
+    }
+}
+
+const getFollowing = async (userId) => {
+    try {
+        const user = await readUser(userId)
+        let followings = []
+        for (i = 0; i < user.following.length; i++) {
+            followings.push(await readUser(user.following[i]))
+        }
+
+        return followings
+    } catch (error) {
+        throw error
+    }
+}
+
 module.exports = {
-    readUser, createUser, updateUser, deleteUser, readUsers
+    readUser, createUser, updateUser, deleteUser, readUsers,
+    follow, unfollow, getFollowers, getFollowing
 }

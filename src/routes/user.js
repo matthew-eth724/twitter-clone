@@ -8,7 +8,12 @@ const router = Router()
 
 router.get("/", authMiddleware, readUserController)
 
-router.get("/:id", readUserController)
+router.get("/:id", (req, res, next) => {
+    if (req.params.id == "all")
+        readUsersController(req, res, next)
+    else 
+        readUserController(req, res, next)
+})
 
 router.get("/all", readUsersController)
 

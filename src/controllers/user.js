@@ -7,16 +7,19 @@ const { responseBody } = require("../utils").response
  */
 const createUserController = async (req, res, next) => {
     try {
-        const { username, password} = req.body
+        let { username, password} = req.body
+        username = username.toLowerCase()
+
         const user = await createUser({username, password})
         req.session.user = user
         res.cookie("id", user._id, {maxAge: 60000 * 60 * 24 * 14})
-        //console.log(req.session)
-        return responseBody(res, `Welcome, ${username}`, user, 201)
+
+        return responseBody(res, `Welcome, @${username}`, user, 201)
     } catch (error) {
         if (error == "User Already Exists") {
             let user
-            const { username, password} = req.body 
+            let { username, password} = req.body 
+            username = username.toLowerCase()
             
             if (req.session.user && req.session.user.username != username) 
                 req.session.user = null
@@ -24,12 +27,8 @@ const createUserController = async (req, res, next) => {
             if (req.session.user) {
                 user = await readUser(req.session.user.id)
                 user.sessionId = req.session.id
-                //console.log("xyz1")
-                //console.log(user)
             } else if (!req.session.user) {
                 user = await readUser(username)
-                //console.log("xyz2")
-                //console.log(user)
             }
             
             user.password = await bcrypt.compare(password, user.passwordHash)
@@ -39,7 +38,7 @@ const createUserController = async (req, res, next) => {
                 return responseBody(res, `Welcome back @${username}`, user, 200)
                 
             } else {
-                console.log("error dey ooo", error)
+                console.log("An error occurred 😑", error)
                 next(error)
             }
         }
@@ -55,7 +54,6 @@ const readUserController = async (req, res, next) => {
         if (req.params.id) 
             return responseBody(res, `User ${req.params.id} retrieved`, await readUser(req.params.id), 200)
 
-        //console.log(req.cookies.id)
         return responseBody(res, `User ${req.session.user.id} retrieved `, await readUser(req.session.user.id), 200)
     } catch (error) {
         next(error)

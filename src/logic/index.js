@@ -1,3 +1,4 @@
 const userLogic = require("./user")
+const postLogic = require("./post")
 
-module.exports = { userLogic }
+module.exports = { userLogic, postLogic }
