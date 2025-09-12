@@ -7,6 +7,10 @@ const createPost = async (userId, data) => {
         const { content, replyingTo } = data
         const post = await new Post({author: userId, content, replyingTo}).save()
         
+        const user = await User.findById(userId)
+        user.posts.push(post)
+        await User.findByIdAndUpdate(userId, {posts: user.posts})
+        
         if (replyingTo)
             await reply(post._id.toString(), replyingTo)
 
@@ -44,7 +48,10 @@ const updatePost = async (postId, data) => {
 
 const deletePost = async (postId) => {
     try {
-        await Post.findByIdAndDelete(postId)
+        const post = await Post.findByIdAndDelete(postId)
+
+        const user = await User.findById(post.author)
+        await User.findByIdAndUpdate(post.author, {posts: removeItem(user.posts, post._id.toString())})
     } catch (error) {
         throw error
     }
@@ -158,7 +165,15 @@ const getUserLikes = async (userId) => {
     }
 }
 
+const getUserPosts = async (userId) => {
+    try {
+        return Post.find({author: userId})
+    } catch (error) {
+        throw error
+    }
+}
+
 module.exports = {
     createPost, readPost, readPosts, updatePost, deletePost, getUserLikes, getUserBookmarks,
-    interact, viewPost, unbookmarkPost, bookmarkPost, unlikePost, likePost
+    interact, viewPost, unbookmarkPost, bookmarkPost, unlikePost, likePost, getUserPosts
 }

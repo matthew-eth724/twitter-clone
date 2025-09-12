@@ -241,7 +241,57 @@ const getFollowing = async (userId) => {
     }
 }
 
+const block = async (userId, accountId) => {
+    try {
+        const user = await readUser(userId)
+        user.blocked.push(accountId)
+        await User.findByIdAndUpdate(userId, {blocked: user.blocked})
+    } catch (error) {
+        throw error
+    }
+}
+
+const unBlock = async (userId, accountId) => {
+    try {
+        const user = await readUser(userId)
+        await User.findByIdAndUpdate(userId, {blocked: removeItem(user.blocked, accountId)})
+    } catch (error) {
+        throw error
+    }
+}
+
+const changePassword = async (userId, newPassword) => {
+    try {
+        await validatePassword(newPassword)
+
+        const newPasswordHash = await bcrypt.hash(newPassword, 10)
+        await User.findByIdAndUpdate(userId, {passwordHash: newPasswordHash})
+    } catch (error) {
+        throw error
+    }
+}
+
+const changeUsername = async (userId, newUsername) => {
+    try {
+        await validateUsername(newUsername)
+
+        const user = await readUser(userId)
+        const dateCreated = new Date(user.dateCreated)
+        const lastUsernameChange = new Date(user.lastUsernameChange)
+        const today = new Date()
+
+        if (user.dateCreated != user.lastUsernameChange || lastUsernameChange.getMonth() == today.getMonth() && dateCreated.getFullYear() == today.getFullYear())
+            throw "Username can only be changed once every 30 days"
+
+        await User.findByIdAndUpdate(userId, {username: newUsername.toLowerCase(), lastUsernameChange: today})
+        return await readUser(userId)
+    } catch (error) {
+        throw error
+    }
+}
+
 module.exports = {
     readUser, createUser, updateUser, deleteUser, readUsers,
-    follow, unfollow, getFollowers, getFollowing
+    follow, unfollow, getFollowers, getFollowing, block, unBlock,
+    changeUsername, changePassword
 }

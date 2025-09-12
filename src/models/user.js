@@ -12,7 +12,8 @@ const user = new Schema({
     likes: [{type: SchemaTypes.ObjectId, ref: "Post"}],
     bookmarks: [{type: SchemaTypes.ObjectId, ref: "Post"}],
     active: Boolean,
-    blocked: [{type: SchemaTypes.ObjectId, ref: "User"}]
+    blocked: [{type: SchemaTypes.ObjectId, ref: "User"}],
+    lastUsernameChange: {type: Date, default: Date.now()}
 })
 
 user.set("toJSON", {
