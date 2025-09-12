@@ -9,7 +9,7 @@ const post = new Schema({
     bookmarks: [{type: SchemaTypes.ObjectId, ref: "User"}],
     views: [{type: SchemaTypes.ObjectId, ref: "User"}],
     interactions: [{type: SchemaTypes.ObjectId, ref: "User"}],
-    datePublished: {type: Date, default: date.now()},
+    datePublished: {type: Date, default: Date.now()},
 })
 
 post.set("toJSON", {

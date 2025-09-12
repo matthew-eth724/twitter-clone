@@ -5,6 +5,11 @@ const responseBody = (res, msg, data, status) => {
     })
 }
 
+const response = (res, msg, status) => {
+    return res.status(status).json({
+        msg: msg
+    })
+}
 module.exports = {
-    responseBody
+    responseBody, response
 }

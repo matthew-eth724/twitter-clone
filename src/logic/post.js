@@ -61,7 +61,7 @@ const reply = async (postId, replyingTo) => {
     try {
         const post = await Post.findById(replyingTo)
         post.comments.push(postId)
-        await Post.findByIdAndUpdate(replyingTo, {comments: postcss.comments})
+        await Post.findByIdAndUpdate(replyingTo, {comments: post.comments})
     } catch (error) {
         throw error
     }
@@ -95,7 +95,7 @@ const unlikePost = async (postId, userId) => {
 
 const bookmarkPost = async (postId, userId) => {
     try {
-        const user = await User.findById(userid)
+        const user = await User.findById(userId)
         user.bookmarks.push(postId)
         await User.findByIdAndUpdate(userId, {bookmarks: user.bookmarks})
 
@@ -173,7 +173,15 @@ const getUserPosts = async (userId) => {
     }
 }
 
+const getReplies = async (postId) => {
+    try {
+        return await Post.find({replyingTo: postId})
+    } catch (error) {
+        throw error
+    }
+}
+
 module.exports = {
     createPost, readPost, readPosts, updatePost, deletePost, getUserLikes, getUserBookmarks,
-    interact, viewPost, unbookmarkPost, bookmarkPost, unlikePost, likePost, getUserPosts
+    interact, viewPost, unbookmarkPost, bookmarkPost, unlikePost, likePost, getUserPosts, getReplies
 }

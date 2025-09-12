@@ -115,15 +115,6 @@ const validateUsername = async (username) => {
                 throw "Username cannot contain spaces"
         }
 
-        const specialChars = ["!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "-", "+", "=", "?", ">", "<", "/", ":", ";", "[", "]", "{", "}"]
-
-        for (i = 0; i < uname.length; i++) {
-            for (x = 0; x < specialChars.length;  x++) {
-                if (uname[i] == specialChars[x])
-                    throw "Username cannot contain special characters"
-            }
-        }
-
     } catch (error) {
         console.log({
             error: error,
@@ -146,20 +137,17 @@ const validatePassword = (password) => {
         const pword = password.split("")
 
         for (i = 0; i < specialChars.length; i++) {
-            console.log(`Test1- password contains special character: ${containSpecial} char: ${specialChars[i]}, ${i}`)
             
             for (x = 0; x < pword.length; x++) {
                 console.log(x, i)
                 if (pword[x] == specialChars[i]){
                     containSpecial = true
-                    console.log(`Test2- password contains special character: ${containSpecial} char: ${specialChars[i]}, char: ${pword[i]} ${i}`)
                 }
             }
             console.log("fail")
         }
 
         if (!containSpecial) {
-            console.log(`Test3- password contains special character: ${containSpecial}`)
             throw "password must contain special characters"
         }
 
@@ -176,8 +164,6 @@ const validatePassword = (password) => {
         if (!containNum)
             throw "password must contain a number"
 
-        console.log(`password contains number: ${containNum}`)
-        console.log(`password contains special character: ${containSpecial}`)
     } catch (error) {
         console.log({
             error: error,
@@ -195,19 +181,19 @@ const follow = async (userId, toFollow) => {
 
         const following = await readUser(toFollow)
         following.followers.push(userId)
-        await User.findByIdAndUpdate(userId, {followers: following.followers })
+        await User.findByIdAndUpdate(toFollow, {followers: following.followers })
     } catch (error) {
-        throw
+        throw error
     }
 }
 
 const unfollow = async (userId, toUnfollow) => {
     try {
-        const user = readUser(userId)
+        const user = await readUser(userId)
         await User.findByIdAndUpdate(userId, {following: removeItem(user.following, toUnfollow)})
 
-        const following = readUser(toUnfollow)
-        await User.findByIdAndUpdate(toUnfollow, {followers: removeItem(toUnfollow.followers, userId)})
+        const following = await readUser(toUnfollow)
+        await User.findByIdAndUpdate(toUnfollow, {followers: removeItem(following.followers, userId)})
     } catch (error) {
         throw error
     }
@@ -218,7 +204,7 @@ const getFollowers = async (userId) => {
         const user = await readUser(userId)
         let followers = []
         for (i = 0; i < user.followers.length; i++) {
-            followers.push(await user.followers[i])
+            followers.push(await readUser(user.followers[i].toString()))
         }
 
         return followers
@@ -232,7 +218,7 @@ const getFollowing = async (userId) => {
         const user = await readUser(userId)
         let followings = []
         for (i = 0; i < user.following.length; i++) {
-            followings.push(await readUser(user.following[i]))
+            followings.push(await readUser(user.following[i].toString()))
         }
 
         return followings
@@ -276,12 +262,7 @@ const changeUsername = async (userId, newUsername) => {
         await validateUsername(newUsername)
 
         const user = await readUser(userId)
-        const dateCreated = new Date(user.dateCreated)
-        const lastUsernameChange = new Date(user.lastUsernameChange)
         const today = new Date()
-
-        if (user.dateCreated != user.lastUsernameChange || lastUsernameChange.getMonth() == today.getMonth() && dateCreated.getFullYear() == today.getFullYear())
-            throw "Username can only be changed once every 30 days"
 
         await User.findByIdAndUpdate(userId, {username: newUsername.toLowerCase(), lastUsernameChange: today})
         return await readUser(userId)
