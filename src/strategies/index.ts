@@ -1,0 +1,1 @@
+export { localStrategy } from "./local";
